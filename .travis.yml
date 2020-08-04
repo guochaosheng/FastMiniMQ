@@ -1,0 +1,22 @@
+sudo: false
+language: java
+
+dist:
+  - trusty
+
+jdk:
+  - openjdk8
+
+before_cache:
+  - rm -rf $HOME/.m2/repository/org/nopasserby/fastminimq
+
+cache:
+  directories:
+    - $HOME/.m2
+  
+script:
+  - travis_retry mvn -B package jacoco:report coveralls:report
+
+after_success:
+  - mvn clean install
+  - bash <(curl -s https://codecov.io/bash)
