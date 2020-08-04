@@ -16,7 +16,7 @@
 
 package org.nopasserby.fastminimq;
 
-import java.io.File;
+import static java.io.File.separator;
 import java.util.UUID;
 
 public class MQConstants {
@@ -45,7 +45,7 @@ public class MQConstants {
         
         public final static String BROKER_HOSTNAME = System.getProperty("hostname", "0.0.0.0:6001");
         
-        public final static String DEFAULT_DATA_DIR = System.getProperty("user.dir") + File.separator + "fastminimq";
+        public final static String DEFAULT_DATA_DIR = System.getProperty("user.dir") + separator + "fastminimq";
         
         public final static String DATA_DIR = System.getProperty("data.dir", DEFAULT_DATA_DIR);
         
@@ -82,6 +82,12 @@ public class MQConstants {
         public static final long DATA_RETENTION_MILLIS = Long.parseLong(System.getProperty("data.retention.millis", "60480000")); // 60480000 = 7 * 24 * 60 * 60 * 1000
         
         public static final long DATA_RETENTION_CHECK_INTERVAL_MILLIS = Long.parseLong(System.getProperty("data.retention.check.interval.millis", "3600000")); // 3600000 = 60 * 60 * 1000
+        
+        public static final String OUT_LOG_LEVEL = System.getProperty("out.log.level", "info");
+
+        public static final String OUT_LOG_FILE = System.getProperty("out.log.file"); // default console output
+        
+        public static final int OUT_LOG_RETENTION = Integer.parseInt(System.getProperty("out.log.file.retention.days", "30"));
         
     }
     
