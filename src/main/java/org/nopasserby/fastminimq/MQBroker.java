@@ -28,14 +28,13 @@ import static org.nopasserby.fastminimq.MQUtil.startThread;
 import static org.nopasserby.fastminimq.MQUtil.toInetAddress;
 
 import java.net.InetSocketAddress;
-import org.nopasserby.fastminimq.MQConstants.ShutdownAble;
 import org.nopasserby.fastminimq.MQExecutor.MQDispatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.buffer.ByteBuf;
 
-public class MQBroker extends MQDispatch implements ShutdownAble {
+public class MQBroker extends MQDispatch implements Runnable {
     
     private static Logger logger = LoggerFactory.getLogger(MQBroker.class);
     
@@ -117,7 +116,6 @@ public class MQBroker extends MQDispatch implements ShutdownAble {
         startThread(server, "MQ-BROKER-SERVER");
     }
     
-    @Override
     public void shutdown() throws Exception {
         server.shutdown();
         storage.shutdown();

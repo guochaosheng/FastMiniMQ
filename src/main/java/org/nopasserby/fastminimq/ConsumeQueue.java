@@ -25,12 +25,11 @@ import static org.nopasserby.fastminimq.MQUtil.startThread;
 
 import java.nio.ByteBuffer;
 
-import org.nopasserby.fastminimq.MQConstants.ShutdownAble;
 import org.nopasserby.fastminimq.log.SegmentLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ConsumeQueue implements ShutdownAble {
+public class ConsumeQueue implements Runnable {
 
     private static Logger logger = LoggerFactory.getLogger(ConsumeQueue.class);
     
@@ -93,11 +92,13 @@ public class ConsumeQueue implements ShutdownAble {
         return shutdown;
     }
     
-    @Override
     public void shutdown() throws Exception {
         shutdown = true;
-        deleteExpiredWork.shutdown();
         consumeQueueIndex.shutdown();
+        
+        synchronized (deleteExpiredWork) {
+            deleteExpiredWork.notify();
+        }
     }
     
     private Runnable buildIndexWork = new Runnable() {
@@ -112,29 +113,14 @@ public class ConsumeQueue implements ShutdownAble {
 
     };
     
-    private ShutdownAble deleteExpiredWork = new ShutdownAble() {
-        long interval = DATA_RETENTION_CHECK_INTERVAL_MILLIS;
+    private Runnable deleteExpiredWork = new Runnable() {
         
         @Override
         public void run() {
             while (!isShutdown()) {
                 deleteExpiredDoWork();
-                waitFor(interval);
             }
             logger.info("delete expired log has stopped.");
-        }
-        
-        public synchronized void waitFor(long millis) {
-            try {
-                wait(millis);
-            } catch (InterruptedException e) {
-                logger.error("delete expired log work interruption", e);
-            }
-        }
-
-        @Override
-        public synchronized void shutdown() throws Exception {
-            notify();
         }
         
     };
@@ -142,10 +128,13 @@ public class ConsumeQueue implements ShutdownAble {
     protected void deleteExpiredDoWork() {
         try {
             deleteExpiredDoWork0();
+            
+            synchronized (deleteExpiredWork) {
+                deleteExpiredWork.wait(DATA_RETENTION_CHECK_INTERVAL_MILLIS);
+            }
         } catch (Exception e) {
             logger.error("delete expired error", e);
         }
-        
     }
 
     private void deleteExpiredDoWork0() throws Exception {

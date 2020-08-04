@@ -44,7 +44,6 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
-import org.nopasserby.fastminimq.MQConstants.ShutdownAble;
 import org.nopasserby.fastminimq.MQConstants.Status;
 import org.nopasserby.fastminimq.MQExecutor.ChannelDelegate;
 import org.nopasserby.fastminimq.log.FileChannelSegmentLogFactory;
@@ -54,7 +53,7 @@ import org.slf4j.LoggerFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-public class MQStorage implements ShutdownAble {
+public class MQStorage implements Runnable {
     
     private static Logger logger = LoggerFactory.getLogger(MQStorage.class);
     
@@ -146,7 +145,6 @@ public class MQStorage implements ShutdownAble {
         startThread(storageProcessor, "MQ-BROKER-STORAGE-EVENTPROCESSOR");
     }
     
-    @Override
     public void shutdown() {
         shutdown = true;
     }

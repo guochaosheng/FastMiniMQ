@@ -176,10 +176,4 @@ public class MQConstants {
         
     }
     
-    public static interface ShutdownAble extends Runnable {
-        
-        public void shutdown() throws Exception;
-        
-    }
-    
 }

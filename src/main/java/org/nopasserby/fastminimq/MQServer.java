@@ -20,7 +20,6 @@ import static org.nopasserby.fastminimq.MQConstants.MQBroker.SERVER_DECODE_MAX_F
 
 import java.net.SocketAddress;
 
-import org.nopasserby.fastminimq.MQConstants.ShutdownAble;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +29,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
-public class MQServer implements ShutdownAble {
+public class MQServer implements Runnable {
     
     private static Logger logger = LoggerFactory.getLogger(MQServer.class);
     
@@ -61,7 +60,6 @@ public class MQServer implements ShutdownAble {
         }
     }
     
-    @Override
     public void shutdown() {
         parentGroup.shutdownGracefully();
         childGroup.shutdownGracefully();

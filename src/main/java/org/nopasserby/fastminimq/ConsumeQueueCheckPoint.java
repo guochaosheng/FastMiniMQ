@@ -33,7 +33,6 @@ import java.util.function.BiConsumer;
 import org.nopasserby.fastminimq.ConsumeQueueIndex.GlobalIdIndex;
 import org.nopasserby.fastminimq.ConsumeQueueIndex.SubqueueIndex;
 import org.nopasserby.fastminimq.ConsumeQueueIndex.SubqueueTopicIndex;
-import org.nopasserby.fastminimq.MQConstants.ShutdownAble;
 import org.nopasserby.fastminimq.log.RandomBufferSegmentLogFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +40,7 @@ import org.slf4j.LoggerFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-public class ConsumeQueueCheckPoint implements ShutdownAble {
+public class ConsumeQueueCheckPoint implements Runnable {
     
     private static Logger logger = LoggerFactory.getLogger(ConsumeQueueCheckPoint.class);
     
@@ -258,7 +257,6 @@ public class ConsumeQueueCheckPoint implements ShutdownAble {
         return shutdown;
     }
     
-    @Override
     public void shutdown() throws Exception {
         shutdown = true;
         synchronized (checkPointQueue) {                

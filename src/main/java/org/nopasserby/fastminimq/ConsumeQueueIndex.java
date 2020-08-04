@@ -37,7 +37,6 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiConsumer;
 
 import org.nopasserby.fastminimq.ConsumeQueueTopicIdIndex.TopicIndex;
-import org.nopasserby.fastminimq.MQConstants.ShutdownAble;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +45,7 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.util.concurrent.FastThreadLocal;
 
-public class ConsumeQueueIndex implements ShutdownAble {
+public class ConsumeQueueIndex implements Runnable {
 
     private static Logger logger = LoggerFactory.getLogger(ConsumeQueueIndex.class);
     
@@ -165,7 +164,6 @@ public class ConsumeQueueIndex implements ShutdownAble {
         startThread(consumeQueueCheckPoint, "MQ-BROKER-CONSUMEQUEUE-CHECKPOINT");
     }
     
-    @Override
     public void shutdown() throws Exception {
         consumeQueueCheckPoint.shutdown();
     }
