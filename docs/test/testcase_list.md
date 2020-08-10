@@ -36,4 +36,5 @@
 | 基准测试清单              | 状态                                                         |
 | :------------------------ | :----------------------------------------------------------- |
 | reboot 前后数据一致性验证 | [已完](https://github.com/guochaosheng/FastMiniMQ/tree/master/docs/test/reliability/testcase_reboot.md) |
+| kill PID 安全退出前后数据一致性验证 | [已完](https://github.com/guochaosheng/FastMiniMQ/tree/master/docs/test/reliability/testcase_safe_exit.md) |
 | 生产和消费数据一致性验证  | 待完                                                         |
