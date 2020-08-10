@@ -177,14 +177,14 @@ public class MQProducer {
     public MQFuture<MQRecord> commit(MQRecord record) {
         MQFutureMetaData future = newFutureMetaData(record.getId(), COMMIT_TX, record.getTopic(), record.getBody());
         MQClusterQueues clusterQueues = this.clusterQueues;
-        future.recordMetaData.addHistory(clusterQueues.metaData(record.getBroker()));
+        future.recordMetaData.addHistoryBroker(clusterQueues.metaData(record.getBroker()));
         return dispatch(clusterQueues, future);
     }
     
     public MQFuture<MQRecord> rollback(MQRecord record) {
         MQFutureMetaData future = newFutureMetaData(record.getId(), ROLLBACK_TX, record.getTopic(), record.getBody());
         MQClusterQueues clusterQueues = this.clusterQueues;
-        future.recordMetaData.addHistory(clusterQueues.metaData(record.getBroker()));
+        future.recordMetaData.addHistoryBroker(clusterQueues.metaData(record.getBroker()));
         return dispatch(clusterQueues, future);
     }
     
@@ -236,11 +236,11 @@ public class MQProducer {
             complete(recordMetaData.futureId, Status.FAIL, new RuntimeException("retry " + recordMetaData.retry + " times"));
             return;
         }
-        MQBrokerMetaData brokerMetaData = recordMetaData.historyLast();// default route
+        MQBrokerMetaData brokerMetaData = recordMetaData.historyLastBroker();// default route
         if (recordMetaData.sign == NON_TX || (recordMetaData.retry == 0 && recordMetaData.sign == PRE_TX)) {
             brokerMetaData = route(routeDeques.brokerMetaDataList(), recordMetaData);// extend route
         }
-        recordMetaData.addHistory(brokerMetaData);
+        recordMetaData.addHistoryBroker(brokerMetaData);
         routeDeques.dispatch(brokerMetaData, recordMetaData);
     }
     
@@ -290,7 +290,7 @@ public class MQProducer {
             
             // failover
             if (recordMetaData.retry > 0) {
-                MQBrokerMetaData brokerMetaData = recordMetaData.historyLast();
+                MQBrokerMetaData brokerMetaData = recordMetaData.historyLastBroker();
                 availableBrokerList = new ArrayList<MQBrokerMetaData>(availableBrokerList);
                 availableBrokerList.remove(brokerMetaData);
                 failureBroker.put(brokerMetaData, System.currentTimeMillis());
@@ -505,16 +505,21 @@ public class MQProducer {
          
         ArrayDeque<MQBrokerMetaData> history = new ArrayDeque<MQBrokerMetaData>(RETRY);
          
-        public List<MQBrokerMetaData> history() {
+        public List<MQBrokerMetaData> historyBroker() {
             return new ArrayList<MQBrokerMetaData>(history);
         }
         
-        public void addHistory(MQBrokerMetaData brokerMetaData) {
+        public void addHistoryBroker(MQBrokerMetaData brokerMetaData) {
             history.add(brokerMetaData);
         }
         
-        public MQBrokerMetaData historyLast() {
+        public MQBrokerMetaData historyLastBroker() {
             return history.peekLast();
+        }
+        
+        public String historyLastBrokerName() {
+            MQBrokerMetaData broker = history.peekLast();
+            return broker == null ? null : broker.name();
         }
         
         public byte[] getId() {
@@ -550,13 +555,12 @@ public class MQProducer {
         }
         
         MQRecord complete0(Status status, Exception exception) {
-            MQBrokerMetaData brokerMetaData = recordMetaData.historyLast();
             MQRecord record = new MQRecord();
             record.setId(recordMetaData.id);
             record.setSign(recordMetaData.sign);
             record.setTopic(recordMetaData.topic);
             record.setBody(recordMetaData.body);
-            record.setBroker(brokerMetaData.name());
+            record.setBroker(recordMetaData.historyLastBrokerName());
             record.setStatus(status);
             record.setException(exception);
             complete(record);
