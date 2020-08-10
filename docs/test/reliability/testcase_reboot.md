@@ -1,6 +1,6 @@
 # Reliability TestCase (Reboot)
 
-一个 producer 节点（4核8G内存），一个 broker 节点（8核16G内存），一个 consumer 节点（4核8G内存），256 个消息 topic，128 字节消息 body。
+一个 producer 节点（4核8G内存），一个 broker 节点（4核8G内存），一个 consumer 节点（4核8G内存），256 个消息 topic，128 字节消息 body。
 
 ## 结构图
 
