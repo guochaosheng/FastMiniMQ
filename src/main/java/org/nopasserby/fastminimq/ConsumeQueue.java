@@ -16,14 +16,19 @@
 
 package org.nopasserby.fastminimq;
 
+import static org.nopasserby.fastminimq.MQConstants.MQBroker.CLEAN_SHUTDOWN;
 import static org.nopasserby.fastminimq.MQConstants.MQBroker.DATA_RETENTION_CHECK_INTERVAL_MILLIS;
 import static org.nopasserby.fastminimq.MQConstants.MQBroker.DATA_RETENTION_MILLIS;
 import static org.nopasserby.fastminimq.MQConstants.MQBroker.MAX_RECORD_LENGTH;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.REOCRD_LENGTH_SELF_LENGTH;
 import static org.nopasserby.fastminimq.MQUtil.currentTimeMillis;
+import static org.nopasserby.fastminimq.MQUtil.existsFile;
+import static org.nopasserby.fastminimq.MQUtil.createFile;
+import static org.nopasserby.fastminimq.MQUtil.deleteFile;
 import static org.nopasserby.fastminimq.MQUtil.startThread;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.CountDownLatch;
 
 import org.nopasserby.fastminimq.log.SegmentLog;
 import org.slf4j.Logger;
@@ -45,6 +50,8 @@ public class ConsumeQueue implements Runnable {
     
     private volatile boolean shutdown;
     
+    private CountDownLatch shutdownLatch = new CountDownLatch(2);
+    
     public ConsumeQueue(MQStorage storage) throws Exception {
         this.storage = storage;
         this.commitLog = storage.getCommitLog();
@@ -54,12 +61,22 @@ public class ConsumeQueue implements Runnable {
     }
     
     private void init() throws Exception {
-        offset = consumeQueueIndex.resumeCheckPoint(commitLog.resumeOffset());
+        long resumeOffset = commitLog.resumeOffset();
+        if (isSafeExit()) {
+            resumeOffset = commitLog.writeOffset();// skip resume offset to last offset
+        }
+        offset = consumeQueueIndex.resumeCheckPoint(resumeOffset);
         long lastOffset = commitLog.writeOffset();
         while (lastOffset != offset) {
             buildIndexMakeup(commitLog);
         }
         storage.getKVdb().recover(consumeQueueIndex.getKVdb());
+        
+        deleteFile(CLEAN_SHUTDOWN);
+    }
+    
+    private boolean isSafeExit() {
+        return existsFile(CLEAN_SHUTDOWN);
     }
     
     protected void buildIndexMakeup(Mappable mappable) {
@@ -99,6 +116,11 @@ public class ConsumeQueue implements Runnable {
         synchronized (deleteExpiredWork) {
             deleteExpiredWork.notify();
         }
+        shutdownLatch.await();
+        
+        commitLog.sync();
+        
+        createFile(CLEAN_SHUTDOWN);
     }
     
     private Runnable buildIndexWork = new Runnable() {
@@ -108,7 +130,8 @@ public class ConsumeQueue implements Runnable {
             while (!isShutdown()) {
                 buildIndexDoWork(buffer);
             }
-            logger.info("consume queue index build has stopped.");
+            logger.info("the task of consuming the queue index build has been stopped.");
+            shutdownLatch.countDown();
         }
 
     };
@@ -120,7 +143,8 @@ public class ConsumeQueue implements Runnable {
             while (!isShutdown()) {
                 deleteExpiredDoWork();
             }
-            logger.info("delete expired log has stopped.");
+            logger.info("the task of deleting expired logs has been stopped.");
+            shutdownLatch.countDown();
         }
         
     };

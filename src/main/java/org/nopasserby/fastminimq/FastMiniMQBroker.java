@@ -54,6 +54,8 @@ public class FastMiniMQBroker {
         
         MQBroker broker = new MQBroker(new MQBrokerCfg(BROKER_ID, BROKER_HOSTNAME));
         broker.run();
+        
+        addShutdownHook(broker);
     }
     
     public static void bannerOut() {
@@ -119,6 +121,19 @@ public class FastMiniMQBroker {
 
     static boolean noLogFile() {
         return OUT_LOG_FILE == null;
+    }
+    
+    static void addShutdownHook(MQBroker broker) {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                try {
+                    broker.shutdown();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
     
 }

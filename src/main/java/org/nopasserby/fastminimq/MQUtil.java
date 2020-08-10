@@ -81,6 +81,17 @@ public class MQUtil {
         return (int) crc32.getValue();
     }
     
+    public static boolean existsFile(String filepath) {
+        return new File(filepath).exists();
+    }
+    
+    public static File createFile(String filepath) throws IOException {
+        File file = new File(filepath);
+        createDir(file.getParent());
+        file.createNewFile();
+        return file;
+    }
+    
     public static String createDir(String dir) throws IOException {
         File file = new File(dir);
         if (file.exists()) {
@@ -95,8 +106,8 @@ public class MQUtil {
         return dir;
     }
     
-    public static void deleteDir(String dirPath) {
-        File file = new File(dirPath);
+    public static void deleteFile(String filepath) {
+        File file = new File(filepath);
         if (file.isFile()) {
             file.delete();
             return;
@@ -109,7 +120,7 @@ public class MQUtil {
         } 
             
         for (int i = 0; i < files.length; i++) {
-            deleteDir(files[i].getAbsolutePath());
+            deleteFile(files[i].getAbsolutePath());
         }
         file.delete();
     }

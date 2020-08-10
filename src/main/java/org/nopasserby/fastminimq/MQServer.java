@@ -60,9 +60,9 @@ public class MQServer implements Runnable {
         }
     }
     
-    public void shutdown() {
-        parentGroup.shutdownGracefully();
-        childGroup.shutdownGracefully();
+    public void shutdown() throws Exception {
+        parentGroup.shutdownGracefully().get();
+        childGroup.shutdownGracefully().get();
     }
     
     protected ServerBootstrap createServer() {

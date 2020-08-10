@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.function.BiConsumer;
 
 import org.nopasserby.fastminimq.ConsumeQueueIndex.GlobalIdIndex;
@@ -70,7 +71,9 @@ public class ConsumeQueueCheckPoint implements Runnable {
     
     private MQKVdb checkPointKVdb;
     
-    private boolean shutdown;
+    private volatile boolean shutdown;
+    
+    private CountDownLatch shutdownLatch = new CountDownLatch(1);
     
     public ConsumeQueueCheckPoint(boolean checkpointImmediately) throws Exception {
         this(checkpointImmediately, 
@@ -88,7 +91,6 @@ public class ConsumeQueueCheckPoint implements Runnable {
         logger.info("check point index log start offset is {}, end offset is {}", 
                 subqueueCheckPointIndexLog.startOffset(), subqueueCheckPointIndexLog.writeOffset());
         
-        // TODO when exception exit check file point non exist
         long checkPointOffset = 0;
         long checkPointIndex = -1;
         long pointOffset = 0;
@@ -250,7 +252,8 @@ public class ConsumeQueueCheckPoint implements Runnable {
         while (!isShutdown()) {
             buildCheckPointDoWork();
         }
-        logger.info("consume queue checkpoint build has stopped.");
+        logger.info("the task of consuming queue checkpoint construction has been stopped.");
+        shutdownLatch.countDown();
     }
     
     boolean isShutdown() {
@@ -262,6 +265,10 @@ public class ConsumeQueueCheckPoint implements Runnable {
         synchronized (checkPointQueue) {                
             checkPointQueue.notify();
         }
+        shutdownLatch.await();
+        
+        subqueueIndexLog.sync();
+        subqueueCheckPointIndexLog.sync();
     }
     
     private void buildCheckPointDoWork() {

@@ -17,6 +17,7 @@
 package org.nopasserby.fastminimq;
 
 import static java.io.File.separator;
+
 import java.util.UUID;
 
 public class MQConstants {
@@ -88,6 +89,8 @@ public class MQConstants {
         public static final String OUT_LOG_FILE = System.getProperty("out.log.file"); // default console output
         
         public static final int OUT_LOG_RETENTION = Integer.parseInt(System.getProperty("out.log.file.retention.days", "30"));
+        
+        public static final String CLEAN_SHUTDOWN = DATA_DIR + separator + ".clean_shutdown";
         
     }
     

@@ -117,8 +117,8 @@ public class MQBroker extends MQDispatch implements Runnable {
     }
     
     public void shutdown() throws Exception {
-        server.shutdown();
         storage.shutdown();
+        server.shutdown();
         consumeQueue.shutdown();
     }
     

@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 
 import org.nopasserby.fastminimq.MQConstants.Status;
 import org.nopasserby.fastminimq.MQExecutor.ChannelDelegate;
@@ -69,6 +70,8 @@ public class MQStorage implements Runnable {
     
     private volatile boolean shutdown; 
     
+    private CountDownLatch shutdownLatch = new CountDownLatch(1);
+    
     public MQStorage(MQKVdb kvdb) throws Exception {
         this.kvdb = kvdb;
         this.commitLog = new MQNodeLog(new FileChannelSegmentLogFactory(DATA_DIR + separator + commit));
@@ -89,7 +92,7 @@ public class MQStorage implements Runnable {
     
     public void dispatch(ChannelDelegate channel, int commandCode, long commandId, ByteBuf commandData) throws Exception {
         Event event = freeQueue.poll();
-        if (event == null) {
+        if (shutdown || event == null) {
             commandData.release();
             channel.writeAndFlush(buildOut(commandCode, commandId, Status.FAIL.ordinal()));
             return;
@@ -107,7 +110,7 @@ public class MQStorage implements Runnable {
         }
     }
     
-    static final class Event {
+    static class Event {
         ByteBuffer recordData = ByteBuffer.allocate(EVENT_BUFFER_LENGTH);
         ByteBuffer bak = recordData;
         long commandId;
@@ -139,22 +142,37 @@ public class MQStorage implements Runnable {
             status = Status.OK;
         }
     }
+    
+    static class ShutdownEvent extends Event {
+    }
 
     @Override
     public void run() {
         startThread(storageProcessor, "MQ-BROKER-STORAGE-EVENTPROCESSOR");
     }
     
-    public void shutdown() {
+    public void shutdown() throws Exception {
         shutdown = true;
+        freeQueue.take();
+        eventQueue.put(new ShutdownEvent());
+        
+        shutdownLatch.await();
+        commitLog.sync();
     }
     
     public boolean isShutdown() {
         return shutdown;
     }
 
-    protected void processBatch(List<Event> batchEvent) throws Exception {
+    protected boolean processBatch(List<Event> batchEvent) throws Exception {
+        boolean shutdown = false;
+        
         for (Event event: batchEvent) {
+            if (event instanceof ShutdownEvent) {
+                shutdown = true;
+                continue;
+            }
+            
             ByteBuffer recordData = event.recordData;
             
             createTimestamp(event);
@@ -165,6 +183,8 @@ public class MQStorage implements Runnable {
         buffer.flush();
         
         completedBatch(batchEvent);
+        
+        return shutdown;
     }
     
     private void createTimestamp(Event event) {
@@ -182,6 +202,10 @@ public class MQStorage implements Runnable {
     public void completedBatch(List<Event> batchEvent) {
         Set<ChannelDelegate> channels = new HashSet<ChannelDelegate>();
         for (Event event: batchEvent) {
+            if (event instanceof ShutdownEvent) {
+                continue;
+            }
+            
             completed(event);
             if (!channels.contains(event.channel)) {
                 channels.add(event.channel);
@@ -216,33 +240,35 @@ public class MQStorage implements Runnable {
     }
     
     private Runnable storageProcessor = new Runnable() {
-
-        public void storageProcessorWorking() throws Exception  {
-            while (!isShutdown()) {
-                eventHandling();
-            }
-        }
         
         @Override
         public void run() {
             try {
-                storageProcessorWorking();
+                while (eventLoop()) { }
             } catch (Exception e) {
                 logger.error("event processor error", e);
             }
+            
+            logger.info("the task of storing event logs has been stopped.");
+            
+            shutdownLatch.countDown();
         }
         
     };
     
     private List<Event> batchEvent = new ArrayList<Event>(MAX_BATCH_COUNT);
     
-    private void eventHandling() throws Exception {
+    private boolean eventLoop() throws Exception {
         Event event = eventQueue.take();
         batchEvent.add(event);
         eventQueue.drainTo(batchEvent, MAX_BATCH_COUNT - 1);
-        processBatch(batchEvent);
+        
+        boolean shutdown = processBatch(batchEvent);
+        
         freeQueue.addAll(batchEvent);
         batchEvent.clear();
+        
+        return !shutdown;
     }
 
     public MQKVdb getKVdb() {
