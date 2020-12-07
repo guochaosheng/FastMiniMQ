@@ -66,8 +66,6 @@ public class MQConstants {
         
         public static final boolean SYNC_AFTER_FLUSH = Boolean.parseBoolean(System.getProperty("flush.sync", "false"));
         
-        public final static int KV_DB_SIZE = Integer.parseInt(System.getProperty("kv.db.size", "41943040")); // 40 * 1024 * 1024 = 40 M
-        
         public final static int MAX_RECORD_LENGTH = 65535;
         
         public final static int MAX_BATCH_COUNT = 2000;

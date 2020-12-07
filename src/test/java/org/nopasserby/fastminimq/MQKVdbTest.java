@@ -36,7 +36,6 @@ public class MQKVdbTest {
 		MQQueue queue = createMQQueue("testTopic", MQGroup.GROUP_1, index);
 		ByteBuffer command = consumer.buildAckOut(0, queue);
 		command.position(COMMAND_DATA_OFFSET);
-		int kvLength = command.remaining();
 		ByteBuffer recordData = ByteBuffer.allocate(REOCRD_BODY_OFFSET + command.remaining());
 		recordData.putInt(REOCRD_HEAD_LENGTH + command.remaining()); // record length
 		recordData.putShort(DYNAMIC);                                // record type
@@ -51,13 +50,11 @@ public class MQKVdbTest {
 		String consumeQueueKey = ByteBufUtil.hexDump(queryData.array(), COMMAND_DATA_OFFSET, queryData.remaining() - COMMAND_DATA_OFFSET);
 		byte[] resultIndex = kvdb.getTable().get(consumeQueueKey);
 		Assert.assertEquals(index, ByteBuffer.wrap(resultIndex).getLong());
-		Assert.assertEquals(kvLength, kvdb.space());
 		
 		index = 5678;
 		queue.nextIndex(index);
         command = consumer.buildAckOut(0, queue);
         command.position(COMMAND_DATA_OFFSET);
-        kvLength = command.remaining();
         recordData = ByteBuffer.allocate(REOCRD_BODY_OFFSET + command.remaining());
         recordData.putInt(REOCRD_HEAD_LENGTH + command.remaining()); // record length
         recordData.putShort((short) 0);                              // record type
@@ -69,7 +66,6 @@ public class MQKVdbTest {
         
         resultIndex = kvdb.getTable().get(consumeQueueKey);
         Assert.assertEquals(index, ByteBuffer.wrap(resultIndex).getLong());
-        Assert.assertEquals(kvLength, kvdb.space());
 	}
 	
 	@Test

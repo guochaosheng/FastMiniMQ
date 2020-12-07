@@ -19,14 +19,12 @@ package org.nopasserby.fastminimq;
 import static org.nopasserby.fastminimq.MQConstants.DYNAMIC;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.KV_GET;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.KV_DEL;
-import static org.nopasserby.fastminimq.MQConstants.MQBroker.KV_DB_SIZE;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.REOCRD_BODY_OFFSET;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.COMMAND_DATA_OFFSET;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 import org.nopasserby.fastminimq.MQConstants.Status;
@@ -38,12 +36,6 @@ import io.netty.buffer.Unpooled;
 
 public class MQKVdb {
 
-    private static byte[] valueEmpty = new byte[0];
-    
-    private int spaceLimit = KV_DB_SIZE;
-    
-    private AtomicInteger space = new AtomicInteger();
-    
     private Map<String, byte[]> table = new ConcurrentHashMap<String, byte[]>();
     
     public void dispatch(ChannelDelegate channel, int commandCode, long commandId, ByteBuf commandData) throws Exception {
@@ -64,7 +56,6 @@ public class MQKVdb {
         String key = ByteBufUtil.hexDump(commandData);
         commandData.release();
         byte[] value = table.get(key);
-        value = value == null ? valueEmpty : value;
         channel.writeAndFlush(buildAck(commandCode, commandId, Status.OK.ordinal(), value));
     }
     
@@ -72,22 +63,16 @@ public class MQKVdb {
         return table;
     }
     
-    public int space() {
-        return space.get();
-    }
-    
     public void dispatchDelete(ChannelDelegate channel, int commandCode, long commandId, ByteBuf commandData) {
         String key = ByteBufUtil.hexDump(commandData);
         commandData.release();
         byte[] value = table.remove(key);
-        int usedspace = Short.BYTES + value.length; // value length self length + value length
-        space.addAndGet(-usedspace); 
         channel.writeAndFlush(buildAck(commandCode, commandId, Status.OK.ordinal(), value));
     }
     
     public ByteBuf buildAck(int commandCode, long commandId, int status, byte[] value) {
         // status + value length + value
-        int length = Integer.BYTES + Short.BYTES + value.length;
+        int length = Integer.BYTES + Short.BYTES + (value == null ? 0 : value.length);
         
         ByteBuffer command = ByteBuffer.allocate(COMMAND_DATA_OFFSET + length);
         command.putInt(commandCode);             // put command code
@@ -107,33 +92,14 @@ public class MQKVdb {
     public boolean add(ByteBuffer recordData) {
         recordData = recordData.duplicate();
         recordData.position(REOCRD_BODY_OFFSET);
-        
-        int recordBodyLength = recordData.remaining();
-        
         int keyLength = recordData.getShort();
         String key = ByteBufUtil.hexDump(recordData.array(), recordData.position(), keyLength);
         recordData.position(recordData.position() + keyLength);
         int valueLength = recordData.getShort();
-        
-        boolean addable = false;
-        int space = this.space.get();
-        int spaceUpdate = space + recordBodyLength;
-        while (spaceUpdate <= spaceLimit && !addable) {
-            addable = this.space.compareAndSet(space, spaceUpdate);
-            if (addable) {
-                byte[] value = new byte[valueLength];
-                recordData.get(value);
-                value = table.put(key, value);
-                if (value != null) {
-                    int usedspace = Short.BYTES + keyLength + Short.BYTES + value.length;
-                    this.space.addAndGet(-usedspace); // available space may be slightly smaller than the limit
-                }
-                break;
-            }
-            space = this.space.get();
-            spaceUpdate = space + recordBodyLength;
-        }
-        return addable;
+        byte[] value = new byte[valueLength];
+        recordData.get(value);
+        table.put(key, value);
+        return true;
     }
     
     public static MQKVdb unwrap(ByteBuffer checkPointWrapper) {
@@ -167,19 +133,7 @@ public class MQKVdb {
     }
     
     public void recover(MQKVdb kvdb) {
-        Map<String, byte[]> table = new ConcurrentHashMap<String, byte[]>();
-        AtomicInteger space = new AtomicInteger();
-        kvdb.table.forEach(new BiConsumer<String, byte[]>() {
-            @Override
-            public void accept(String key, byte[] value) {
-                table.put(key, value);
-                byte[] keybf = ByteBufUtil.decodeHexDump(key);
-                int usedspace = Short.BYTES + keybf.length + Short.BYTES + value.length;
-                space.addAndGet(usedspace);
-            }
-        });
-        this.table = table;
-        this.space = space;
+        this.table = new ConcurrentHashMap<String, byte[]>(kvdb.table);
     }
     
     public boolean hasIndex() {
