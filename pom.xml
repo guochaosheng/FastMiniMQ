@@ -12,7 +12,7 @@
         <disruptor.version>3.4.2</disruptor.version>
         <netty.version>4.1.42.Final</netty.version>
         <logback.version>1.2.3</logback.version>
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13.1</junit.version>
     </properties>
     
     <dependencies>
