@@ -17,6 +17,8 @@
 package org.nopasserby.fastminimq;
 
 import static java.lang.Integer.toHexString;
+import static org.nopasserby.fastminimq.MQConstants.MQBroker.DATA_DIR;
+import static org.nopasserby.fastminimq.MQConstants.MQBroker.RESET_DATA_DIR;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.COMMAND_CODE_OFFSET;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.COMMAND_ID_OFFSET;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.CONSUME;
@@ -24,6 +26,7 @@ import static org.nopasserby.fastminimq.MQConstants.MQCommand.KV_PUT;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.KV_GET;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.KV_DEL;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.PRODUCE;
+import static org.nopasserby.fastminimq.MQUtil.deleteFile;
 import static org.nopasserby.fastminimq.MQUtil.startThread;
 import static org.nopasserby.fastminimq.MQUtil.toInetAddress;
 
@@ -37,6 +40,10 @@ import io.netty.buffer.ByteBuf;
 public class MQBroker extends MQDispatch implements Runnable {
     
     private static Logger logger = LoggerFactory.getLogger(MQBroker.class);
+    
+    static {
+        if (RESET_DATA_DIR) deleteFile(DATA_DIR);
+    }
     
     private MQStorage storage;
     

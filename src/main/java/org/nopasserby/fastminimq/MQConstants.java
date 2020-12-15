@@ -50,6 +50,8 @@ public class MQConstants {
         
         public final static String DATA_DIR = System.getProperty("data.dir", DEFAULT_DATA_DIR);
         
+        public final static boolean RESET_DATA_DIR = Boolean.parseBoolean(System.getProperty("reset.data.dir", "false"));
+        
         public final static int SERVER_DECODE_MAX_FRAME_LENGTH = 65535;
         
         public final static int CLIENT_DECODE_MAX_FRAME_LENGTH = 16 * 1024 * 1024;
