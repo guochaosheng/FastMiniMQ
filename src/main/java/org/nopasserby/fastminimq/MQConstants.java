@@ -26,7 +26,7 @@ public class MQConstants {
     
     public static final int PARALLEL_CHANNELS = 8;
     
-    public static final int RETRY = 3;
+    public static final int RETRY = Integer.parseInt(System.getProperty("retry", "3"));
     
     public static final int TIMEOUT = 30 * 1000; // default connection timeout 30s
     
