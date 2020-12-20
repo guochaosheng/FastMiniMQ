@@ -121,9 +121,23 @@ public class MQClient {
         }
         
         public void write(ByteBuffer buffer) throws Exception {
-            ensureChannels();
+            Channel channel = null;
+            do {
+                ensureChannels();
+                synchronized (this) {
+                    int selected = Math.abs(sequence.incrementAndGet()) % channels.size();
+                    Channel tmpchannel = channels.get(selected);
+                    if (!tmpchannel.isActive()) {                
+                        tmpchannel.close();
+                        channels.remove(selected);   
+                        continue;
+                    }
+                    channel = tmpchannel;
+                }
+            } while (channel == null);
+            
             ByteBuf out = Unpooled.copiedBuffer(buffer);
-            Channel channel = channels.get(Math.abs(sequence.incrementAndGet()) % channels.size());
+            
             int retry = channels.size();
             while (!channel.isWritable() && retry > 0) {
                 channel = channels.get(Math.abs(sequence.incrementAndGet()) % channels.size());
