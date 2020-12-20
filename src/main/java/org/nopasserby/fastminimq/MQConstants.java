@@ -44,7 +44,7 @@ public class MQConstants {
         
         public final static String BROKER_ID = System.getProperty("broker.id", DEFAULT_BROKER_ID);
         
-        public final static String BROKER_HOSTNAME = System.getProperty("hostname", "0.0.0.0:6001");
+        public final static String BROKER_HOST = System.getProperty("broker.host", "0.0.0.0:6001");
         
         public final static String DEFAULT_DATA_DIR = System.getProperty("user.dir") + separator + "fastminimq";
         

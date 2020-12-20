@@ -16,7 +16,7 @@
 
 package org.nopasserby.fastminimq;
 
-import static org.nopasserby.fastminimq.MQConstants.MQBroker.BROKER_HOSTNAME;
+import static org.nopasserby.fastminimq.MQConstants.MQBroker.BROKER_HOST;
 import static org.nopasserby.fastminimq.MQConstants.MQBroker.BROKER_ID;
 import static org.nopasserby.fastminimq.MQConstants.MQBroker.OUT_LOG_FILE;
 import static org.nopasserby.fastminimq.MQConstants.MQBroker.OUT_LOG_LEVEL;
@@ -52,7 +52,7 @@ public class FastMiniMQBroker {
         
         bannerOut();
         
-        MQBroker broker = new MQBroker(new MQBrokerCfg(BROKER_ID, BROKER_HOSTNAME));
+        MQBroker broker = new MQBroker(new MQBrokerCfg(BROKER_ID, BROKER_HOST));
         broker.run();
         
         addShutdownHook(broker);
