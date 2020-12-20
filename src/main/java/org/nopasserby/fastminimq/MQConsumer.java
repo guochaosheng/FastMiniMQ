@@ -259,6 +259,9 @@ public class MQConsumer {
     
     List<MQRecord> decodeRecordList(ByteBuffer buffer) {
         List<MQRecord> recordList = new ArrayList<MQRecord>();
+        if (buffer == null) {
+            return recordList;
+        }
         int length = buffer.remaining();
         while (length > 0) {
             /**
@@ -355,10 +358,10 @@ public class MQConsumer {
         
         @Override
         public MQResult<List<MQRecord>> get(long timeout, TimeUnit timeUnit) throws InterruptedException {
-            MQResult<List<MQRecord>> result = super.get();
+            MQResult<List<MQRecord>> result = super.get(timeout, timeUnit);
             RecordListResult recordListResult = futureRecordMap.remove(id);
             if (result == null && recordListResult != null) {
-                result = new MQResult<List<MQRecord>>();
+                result = new MQResultLazy();
                 result.setStatus(Status.FAIL);
                 result.setException(new TimeoutException("get timeout."));
                 recordListResult.future.complete(result);
@@ -405,7 +408,7 @@ public class MQConsumer {
     }
     
     public void waitAck(MQQueue queue) throws Exception {
-        waitAck(queue, 0, TimeUnit.SECONDS);
+        waitAck(queue, Integer.MAX_VALUE, TimeUnit.HOURS); // keep waiting
     }
 
     public void waitAck(MQQueue queue, long timeout, TimeUnit timeUnit) throws Exception {

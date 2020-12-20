@@ -173,9 +173,15 @@ public class MQResult<T> {
         }
         
         private void latch(long timeout) throws InterruptedException {
+            long current = System.currentTimeMillis();
+            long target = current + timeout;
             synchronized (this) {
-                while (!completed) {
+                while (!completed && current < target) {
                     wait(timeout);
+                    if (completed) break;
+                    // spurious wakeups
+                    current = System.currentTimeMillis();
+                    timeout = target - current;
                 }
             }
         }
@@ -188,7 +194,9 @@ public class MQResult<T> {
         }
 
         public T get() throws InterruptedException {
-            latch(0);
+            synchronized (this) {
+                while (!completed) wait();
+            }
             return result;
         }
         

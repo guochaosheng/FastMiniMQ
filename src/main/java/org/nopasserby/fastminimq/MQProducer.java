@@ -224,7 +224,7 @@ public class MQProducer {
         try {
             dispatch(clusterQueues, recordMetaData);
         } catch (Exception e) {
-            logger.debug("dispatch error", e);
+            logger.warn("dispatch error", e);
             complete(recordMetaData.futureId, Status.FAIL, e);
         }
         return futureMetaData;
@@ -546,7 +546,7 @@ public class MQProducer {
         
         @Override
         public MQRecord get(long timeout, TimeUnit timeUnit) throws InterruptedException {
-            MQRecord record = super.get();
+            MQRecord record = super.get(timeout, timeUnit);
             MQFutureMetaData future = futures.remove(recordMetaData.futureId);
             if (record == null && future != null) {
                 record = complete0(Status.FAIL, new TimeoutException("get timeout."));
@@ -591,5 +591,3 @@ public class MQProducer {
     }
 
 }
-
-
