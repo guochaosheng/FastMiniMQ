@@ -31,14 +31,13 @@ import static org.nopasserby.fastminimq.MQUtil.crc;
 import static org.nopasserby.fastminimq.MQUtil.nextId;
 import static org.nopasserby.fastminimq.MQUtil.nextUUID;
 
+import java.net.NoRouteToHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -231,7 +230,7 @@ public class MQProducer {
         return futureMetaData;
     }
     
-    void dispatch(MQClusterQueues routeDeques, MQRecordMetaData recordMetaData) {
+    void dispatch(MQClusterQueues routeDeques, MQRecordMetaData recordMetaData) throws Exception {
         if (recordMetaData.retry >= RETRY) {
             complete(recordMetaData.futureId, Status.FAIL, new RuntimeException("retry " + recordMetaData.retry + " times"));
             return;
@@ -261,7 +260,7 @@ public class MQProducer {
      * @throws Exception 
      * 
      * */
-    protected MQBrokerMetaData route(List<MQBrokerMetaData> brokerMetaDataList, MQRecordMetaData recordMetaData) {
+    protected MQBrokerMetaData route(List<MQBrokerMetaData> brokerMetaDataList, MQRecordMetaData recordMetaData) throws Exception {
         return router.route(brokerMetaDataList, recordMetaData);
     }
     
@@ -271,34 +270,30 @@ public class MQProducer {
         
         private Map<MQBrokerMetaData, Long> failureBroker = new ConcurrentHashMap<MQBrokerMetaData, Long>();
         
-        public MQBrokerMetaData route(List<MQBrokerMetaData> brokerMetaDataList, MQRecordMetaData recordMetaData) {
+        public MQBrokerMetaData route(List<MQBrokerMetaData> brokerMetaDataList, MQRecordMetaData recordMetaData) throws Exception {
             List<MQBrokerMetaData> availableBrokerList = brokerMetaDataList;
             if (!failureBroker.isEmpty()) {
-                availableBrokerList = new ArrayList<MQBrokerMetaData>(availableBrokerList);
+                List<MQBrokerMetaData> newAvailableBrokerList = new ArrayList<MQBrokerMetaData>(availableBrokerList);
                 
-                Set<Entry<MQBrokerMetaData, Long>> entrys = failureBroker.entrySet();
-                for (Entry<MQBrokerMetaData, Long> entry: entrys) {
-                    MQBrokerMetaData brokerMetaData = entry.getKey();
-                    long timestamp = entry.getValue();
-                    if (System.currentTimeMillis() - timestamp < TimeUnit.SECONDS.toMillis(60)) {
-                        availableBrokerList.remove(brokerMetaData);
-                        continue;
+                failureBroker.forEach((brokerMetaData, timestamp) -> {
+                    if (System.currentTimeMillis() - timestamp > TimeUnit.SECONDS.toMillis(60)) {
+                        failureBroker.remove(brokerMetaData);
+                        return;
                     }
-                    failureBroker.remove(brokerMetaData);
-                }
+                    newAvailableBrokerList.remove(brokerMetaData);
+                });
+                availableBrokerList = newAvailableBrokerList;
             }
             
-            // failover
-            if (recordMetaData.retry > 0) {
-                MQBrokerMetaData brokerMetaData = recordMetaData.historyLastBroker();
-                availableBrokerList = new ArrayList<MQBrokerMetaData>(availableBrokerList);
-                availableBrokerList.remove(brokerMetaData);
-                failureBroker.put(brokerMetaData, System.currentTimeMillis());
-            }
             if (availableBrokerList.isEmpty()) {
-                throw new IllegalStateException("no broker available");
+                throw new NoRouteToHostException();
             }
             return availableBrokerList.get(Math.abs(sequence++) % availableBrokerList.size());
+        }
+        
+        public void exceptionCaught(MQBrokerMetaData brokerMetaData, Throwable cause) {
+            logger.warn(brokerMetaData.address() + " route error", cause);
+            failureBroker.putIfAbsent(brokerMetaData, System.currentTimeMillis());
         }
         
     }
@@ -356,7 +351,12 @@ public class MQProducer {
     void batchRepeatDispatch(List<MQRecordMetaData> batchRecordMetaData) {
         for (MQRecordMetaData recordMetaData: batchRecordMetaData) {
             recordMetaData.retry++;
-            dispatch(clusterQueues, recordMetaData);
+            try {
+                dispatch(clusterQueues, recordMetaData);
+            } catch (Exception e) {
+                logger.warn("dispatch error", e);
+                complete(recordMetaData.futureId, Status.FAIL, e);
+            }
         }
     }
     
@@ -434,7 +434,7 @@ public class MQProducer {
                     flush0(buffer);
                 }
             } catch (Exception e) {
-                logger.warn(sender.toString() + " flush error", e);
+                router.exceptionCaught(brokerMetaData, e);
                 
                 List<MQRecordMetaData> batchRecordMetaData = new ArrayList<MQRecordMetaData>(batchMessageMetaData);
                 clearCache();
