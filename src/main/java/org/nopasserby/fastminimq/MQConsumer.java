@@ -504,7 +504,7 @@ public class MQConsumer {
     }
     
     ByteBuffer buildRecordOut(long id, MQQueue queue, long beginMillis, long delayMillis) throws InterruptedException {
-        
+        queue.nextIndex(queue.getIndex());
         long nextIndex = queue.nextIndex();
         int rows = queue.rows(nextIndex);
         byte[] topic = queue.getTopic().getBytes();
