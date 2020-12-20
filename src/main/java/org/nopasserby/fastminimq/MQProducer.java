@@ -170,7 +170,7 @@ public class MQProducer {
     }
     
     public MQFuture<MQRecord> sendTxMsg(String topic, byte[] body) {
-        return dispatch(clusterQueues, newFutureMetaData(createGlobalID(), NON_TX, topic, body));
+        return dispatch(clusterQueues, newFutureMetaData(createGlobalID(), PRE_TX, topic, body));
     }
     
     public MQFuture<MQRecord> commit(MQRecord record) {
