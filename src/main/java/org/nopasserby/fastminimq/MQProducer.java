@@ -38,6 +38,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -76,10 +78,11 @@ public class MQProducer {
     
     private MQClient client = new MQClient(dispatch);
     
-    private MQRoundRobinRouter router = new MQRoundRobinRouter();
+    private MQRoundRobinRouter router;
     
     public MQProducer(MQProducerCfg producerCfg) {
         this.producerCfg = producerCfg;
+        this.router = new MQRoundRobinRouter(this);
     }
     
     public MQProducer(MQProducerCfg producerCfg, MQClusterMetaData clusterMetaData) {
@@ -270,16 +273,42 @@ public class MQProducer {
         
         private Map<MQBrokerMetaData, Long> failureBroker = new ConcurrentHashMap<MQBrokerMetaData, Long>();
         
+        private MQProducer producer;
+        
+        private Timer timer;
+        
+        MQRoundRobinRouter(MQProducer producer) {
+            this.producer = producer;
+        }
+        
+        public void startActiveTimer(Map<MQBrokerMetaData, Long> failureBroker) {
+            if (timer != null) return;
+            synchronized (this) {
+                if (timer != null) return;
+                timer = new Timer("MQProducer-BrokerActiveCheck", true);
+                timer.scheduleAtFixedRate(new TimerTask() {
+                    @Override
+                    public void run() {
+                        if (failureBroker.isEmpty()) return;
+                        failureBroker.forEach((brokerMetaData, timestamp) -> {
+                            try {
+                                producer.clusterQueues.getSender(brokerMetaData).ensureActive();
+                                failureBroker.remove(brokerMetaData);
+                            } catch (Exception e) { // ignore
+                            }
+                        });
+                    }
+                }, 1000, 1000);
+            }
+        }
+        
         public MQBrokerMetaData route(List<MQBrokerMetaData> brokerMetaDataList, MQRecordMetaData recordMetaData) throws Exception {
             List<MQBrokerMetaData> availableBrokerList = brokerMetaDataList;
             if (!failureBroker.isEmpty()) {
-                List<MQBrokerMetaData> newAvailableBrokerList = new ArrayList<MQBrokerMetaData>(availableBrokerList);
+                startActiveTimer(failureBroker);
                 
+                List<MQBrokerMetaData> newAvailableBrokerList = new ArrayList<MQBrokerMetaData>(availableBrokerList);
                 failureBroker.forEach((brokerMetaData, timestamp) -> {
-                    if (System.currentTimeMillis() - timestamp > TimeUnit.SECONDS.toMillis(60)) {
-                        failureBroker.remove(brokerMetaData);
-                        return;
-                    }
                     newAvailableBrokerList.remove(brokerMetaData);
                 });
                 availableBrokerList = newAvailableBrokerList;
@@ -464,6 +493,10 @@ public class MQProducer {
             sender(client).write(buffer); // asynchronous socket write
         }
         
+        public void ensureActive() throws Exception {
+            sender(client).ensureActive();
+        }
+        
     }
     
     //atomic updater
@@ -478,7 +511,11 @@ public class MQProducer {
         }
         
         void dispatch(MQBrokerMetaData brokerMetaData, MQRecordMetaData messageMetaData) {
-            brokerSenderMap.get(brokerMetaData.name()).put(messageMetaData);
+            getSender(brokerMetaData).put(messageMetaData);
+        }
+        
+        public MQBrokerSender getSender(MQBrokerMetaData brokerMetaData) {
+            return brokerSenderMap.get(brokerMetaData.name());
         }
         
         List<MQBrokerMetaData> brokerMetaDataList() {

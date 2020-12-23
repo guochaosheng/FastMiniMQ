@@ -120,6 +120,16 @@ public class MQClient {
             return socketAddress;
         }
         
+        public void ensureActive() throws Exception {
+            for (Channel channel: channels) {
+                if (channel.isActive()) return;
+                channel.close();
+            }
+            synchronized (this) {
+                channels.add(bootstrap().connect(socketAddress).sync().channel());
+            }
+        }
+        
         public void write(ByteBuffer buffer) throws Exception {
             Channel channel = null;
             do {
