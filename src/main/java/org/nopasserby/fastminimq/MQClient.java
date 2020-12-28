@@ -23,7 +23,9 @@ import java.net.ConnectException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,11 +78,19 @@ public class MQClient {
         return new MQSender(socketAddress, channelCount);
     }
     
-    synchronized List<Channel> createChannles(SocketAddress socketAddress, int channelCount) throws Exception {
-        List<Channel> channels = new ArrayList<Channel>();
+    synchronized List<Channel> createChannels(SocketAddress socketAddress, int channelCount) throws Exception {
+        List<Channel> channels = Collections.synchronizedList(new ArrayList<Channel>());
         for (int i = 0; i < channelCount; i++) {
-            ChannelFuture cf = bootstrap().connect(socketAddress).sync();
-            channels.add(cf.channel());
+            CountDownLatch latch = new CountDownLatch(1);
+            ChannelFuture cf = bootstrap().connect(socketAddress).addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture cf) throws Exception {
+                    if (cf.isSuccess()) channels.add(cf.channel());
+                    latch.countDown();
+                }
+            });
+            latch.await();
+            if (!cf.isSuccess()) return channels;
         }
         return channels;
     }
@@ -106,7 +116,7 @@ public class MQClient {
         
         private int channelCount;
         
-        private List<Channel> channels;
+        private volatile List<Channel> channels;
         
         private AtomicInteger sequence = new AtomicInteger();
         
@@ -121,56 +131,43 @@ public class MQClient {
         }
         
         public void ensureActive() throws Exception {
-            for (Channel channel: channels) {
-                if (channel.isActive()) return;
-                channel.close();
-            }
-            synchronized (this) {
-                channels.add(bootstrap().connect(socketAddress).sync().channel());
-            }
+            ensureChannels(1); // least one
         }
         
         public void write(ByteBuffer buffer) throws Exception {
-            Channel channel = null;
-            do {
-                ensureChannels();
-                synchronized (this) {
-                    int selected = Math.abs(sequence.incrementAndGet()) % channels.size();
-                    Channel tmpchannel = channels.get(selected);
-                    if (!tmpchannel.isActive()) {                
-                        tmpchannel.close();
-                        channels.remove(selected);   
-                        continue;
-                    }
-                    channel = tmpchannel;
-                }
-            } while (channel == null);
+            if (channels.size() < this.channelCount) ensureChannels(channelCount);
             
-            ByteBuf out = Unpooled.copiedBuffer(buffer);
+            Channel channel = channels.get(Math.abs(sequence.incrementAndGet()) % channels.size());
             
-            int retry = channels.size();
+            int retry = this.channelCount;
             while (!channel.isWritable() && retry > 0) {
                 channel = channels.get(Math.abs(sequence.incrementAndGet()) % channels.size());
+                if (!channel.isActive()) ensureChannels(channelCount);
                 retry--;
             }
             
-            if (channel.isWritable()) {
-                channel.writeAndFlush(out).addListener(new ChannelFutureListener() {
-                    @Override
-                    public void operationComplete(ChannelFuture future) throws Exception {
-                        if (!future.isSuccess()) {
-                            Throwable exception = future.cause();
-                            Channel channel = future.channel();
-                            logger.error(channel.localAddress() + "->" + channel.remoteAddress() + " error in write operation", exception);
-                        }
+            ByteBuf out = Unpooled.copiedBuffer(buffer);
+            
+            boolean writable = channel.isWritable();
+            Object lock = new Object();
+            ChannelFuture cf = channel.writeAndFlush(out);
+            cf.addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    if (!future.isSuccess()) logger.error(future.channel().toString() + " error in write operation", future.cause());
+                    
+                    if (writable) return;
+                    
+                    synchronized (lock) {
+                        lock.notify();
                     }
-                });
-            } else {
-                try {
-                    channel.writeAndFlush(out).sync();
-                } catch (InterruptedException exception) {
-                    logger.error(channel.localAddress() + "->" + channel.remoteAddress() + " error in write operation", exception);
                 }
+            });
+            
+            if (writable) return;
+            
+            synchronized (lock) {
+                lock.wait(10);
             }
         }
         
@@ -180,21 +177,23 @@ public class MQClient {
             }
         }
         
-        public boolean hasAvailableChannel() {
-            return !channels.isEmpty();
-        }
-        
-        void ensureChannels() throws Exception {
-            int availableCount = channels.size();
-            if (availableCount < channelCount) {
-                synchronized (this) {
-                    if (availableCount < channelCount) {
-                        int expandCount = channelCount - availableCount;
-                        channels.addAll(createChannles(socketAddress, expandCount));
+        void ensureChannels(int channelCount) throws Exception {
+            synchronized (this) {
+                List<Channel> channels = new ArrayList<Channel>();
+                for (Channel channel: this.channels) {
+                    if (!channel.isActive()) {
+                        channel.close();
+                        continue;
                     }
-                    if (!hasAvailableChannel()) {
-                        throw new ConnectException("no available channels found");
+                    channels.add(channel);
+                }
+                int activeCount = channels.size();
+                if (activeCount < channelCount) {
+                    channels.addAll(createChannels(socketAddress, channelCount - activeCount));
+                    if (channels.isEmpty()) {
+                        throw new ConnectException("channel not found");
                     }
+                    this.channels = channels;
                 }
             }
         }
