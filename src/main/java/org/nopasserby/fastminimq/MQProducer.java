@@ -161,7 +161,9 @@ public class MQProducer {
     
     private void complete(long id, Status status, Exception exception) {
         MQFutureMetaData future = futures.remove(id);
-        future.complete0(status, exception);
+        if (future != null) { // the ID is removed when the response times out
+            future.complete0(status, exception);
+        }
     }
 
     public void start() throws Exception {
