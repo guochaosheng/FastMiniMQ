@@ -296,7 +296,8 @@ public class MQProducer {
                             try {
                                 producer.clusterQueues.getSender(brokerMetaData).ensureActive();
                                 failureBroker.remove(brokerMetaData);
-                            } catch (Exception e) { // ignore
+                            } catch (Exception e) {
+                                logger.warn(brokerMetaData.name() + " connection failed ", e);
                             }
                         });
                     }
@@ -317,7 +318,7 @@ public class MQProducer {
             }
             
             if (availableBrokerList.isEmpty()) {
-                throw new NoRouteToHostException();
+                throw new NoRouteToHostException("route not found");
             }
             return availableBrokerList.get(Math.abs(sequence++) % availableBrokerList.size());
         }
