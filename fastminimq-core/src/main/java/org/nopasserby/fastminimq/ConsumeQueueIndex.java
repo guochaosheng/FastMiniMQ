@@ -16,12 +16,8 @@
 
 package org.nopasserby.fastminimq;
 
-import static org.nopasserby.fastminimq.MQConstants.COMMIT_TX;
 import static org.nopasserby.fastminimq.MQConstants.GLOBAL_ID_LENGTH;
 import static org.nopasserby.fastminimq.MQConstants.MAGIC;
-import static org.nopasserby.fastminimq.MQConstants.NON_TX;
-import static org.nopasserby.fastminimq.MQConstants.PRE_TX;
-import static org.nopasserby.fastminimq.MQConstants.ROLLBACK_TX;
 import static org.nopasserby.fastminimq.MQConstants.MQBroker.INDEX_SUBQUEUE_LENGTH;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.REOCRD_LENGTH_SELF_LENGTH;
 import static org.nopasserby.fastminimq.MQUtil.startThread;
@@ -36,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.BiConsumer;
 
+import org.nopasserby.fastminimq.MQConstants.Transaction;
 import org.nopasserby.fastminimq.ConsumeQueueTopicIdIndex.TopicIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -169,7 +166,7 @@ public class ConsumeQueueIndex implements Runnable {
     }
     
     boolean isFilterOut(byte sign, long recordOffset, int recordDataLength, short recordType, long recordTimestamp, ByteBuffer recordBody) {
-        if (sign == NON_TX) {
+        if (sign == Transaction.NON.ordinal()) {
             recordBody.position(recordBody.position() + GLOBAL_ID_LENGTH);
             return false;
         }
@@ -178,12 +175,12 @@ public class ConsumeQueueIndex implements Runnable {
         recordBody.get(dstId);
         String globalId = ByteBufUtil.hexDump(dstId);
         
-        if (sign == PRE_TX) {
+        if (sign == Transaction.PREPARE.ordinal()) {
             globalIdIndex.add(globalId, recordOffset + recordDataLength); // only the last message is valid
             return true;
         }
         
-        if (sign == COMMIT_TX || sign == ROLLBACK_TX) {
+        if (sign == Transaction.COMMIT.ordinal() || sign == Transaction.ROLLBACK.ordinal()) {
             if (!globalIdIndex.remove(globalId)) {
                 // skip duplicate and no contain id
                 return true;

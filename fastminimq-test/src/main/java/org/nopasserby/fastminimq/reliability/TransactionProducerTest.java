@@ -16,7 +16,6 @@
 
 package org.nopasserby.fastminimq.reliability;
 
-import static org.nopasserby.fastminimq.MQConstants.COMMIT_TX;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.concurrent.locks.LockSupport.parkNanos;
 
@@ -33,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.nopasserby.fastminimq.MQConstants.Transaction;
 import org.nopasserby.fastminimq.MQProducer;
 import org.nopasserby.fastminimq.MQConstants.Status;
 import org.nopasserby.fastminimq.MQProducer.MQProducerCfg;
@@ -167,7 +167,7 @@ public class TransactionProducerTest {
             
             if (record.getStatus() == Status.OK) {
                 db.beginTransaction();
-                boolean committed = record.getSign() == COMMIT_TX && record.getStatus() == Status.OK;
+                boolean committed = record.getSign() == Transaction.COMMIT.ordinal() && record.getStatus() == Status.OK;
                 if (committed) db.incrementRecordCnt(partition[threadOrder.get() % partition.length], 1);
                 db.delete(record);
                 db.commit();

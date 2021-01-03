@@ -36,8 +36,6 @@ public class MQConstants {
     
     public static final int MAGIC_V1 = 0xA1B2C3D4;  // magic value < 0
     
-    public static final byte NON_TX = 0, PRE_TX = 1, COMMIT_TX = 2, ROLLBACK_TX = 3;
-
     public static class MQBroker {
         
         public final static String DEFAULT_BROKER_ID = "broker-" + Integer.toHexString(UUID.randomUUID().hashCode());
@@ -170,6 +168,12 @@ public class MQConstants {
             }
             return null;
         }
+        
+    }
+    
+    public enum Transaction {
+        
+        NON, PREPARE, COMMIT, ROLLBACK, PREPARE_FOR_CONSUMER, COMMIT_FOR_CONSUMER, ROLLBACK_FOR_CONSUMER
         
     }
     

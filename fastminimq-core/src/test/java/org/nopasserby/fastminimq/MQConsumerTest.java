@@ -16,7 +16,6 @@
 
 package org.nopasserby.fastminimq;
 
-import static org.nopasserby.fastminimq.MQConstants.NON_TX;
 import static org.nopasserby.fastminimq.MQConstants.MQBroker.CLIENT_DECODE_MAX_FRAME_LENGTH;
 import static org.nopasserby.fastminimq.MQUtil.nextUUID;
 import static org.nopasserby.fastminimq.ReocrdHelper.createReocrd;
@@ -27,6 +26,7 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nopasserby.fastminimq.MQConstants.Status;
+import org.nopasserby.fastminimq.MQConstants.Transaction;
 import org.nopasserby.fastminimq.MQConsumer.MQConsumerCfg;
 import org.nopasserby.fastminimq.MQExecutor.MQDispatch;
 import org.nopasserby.fastminimq.MQRegistry.MQBrokerMetaData;
@@ -55,7 +55,7 @@ public class MQConsumerTest {
 			txidList.add(ByteBufUtil.hexDump(txid));
 			String body = "hello world!(" + index + ")";
 			bodyList.add(body);
-			futureCommandData.put(createReocrd(txid, topic, NON_TX, body.getBytes()));
+			futureCommandData.put(createReocrd(txid, topic, Transaction.NON.ordinal(), body.getBytes()));
 		}
 		futureCommandData.flip();
 		//build response commandData end

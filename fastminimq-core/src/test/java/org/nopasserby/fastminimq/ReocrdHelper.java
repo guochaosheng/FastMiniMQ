@@ -16,16 +16,14 @@
 
 package org.nopasserby.fastminimq;
 
-import static org.nopasserby.fastminimq.MQConstants.COMMIT_TX;
 import static org.nopasserby.fastminimq.MQConstants.DYNAMIC;
 import static org.nopasserby.fastminimq.MQConstants.IMMUTABLE;
-import static org.nopasserby.fastminimq.MQConstants.NON_TX;
-import static org.nopasserby.fastminimq.MQConstants.PRE_TX;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.COMMAND_DATA_OFFSET;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.REOCRD_BODY_OFFSET;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.REOCRD_HEAD_LENGTH;
 import static org.nopasserby.fastminimq.MQUtil.nextUUID;
 
+import org.nopasserby.fastminimq.MQConstants.Transaction;
 import org.nopasserby.fastminimq.MQRegistry.MQClusterMetaData;
 
 import java.nio.ByteBuffer;
@@ -63,26 +61,26 @@ public class ReocrdHelper {
     }
     
 	public static ByteBuffer createNonTransactionRecord(String topic) throws Exception {
-		return encodeReocrdIndex(nextUUID(), topic, NON_TX, 0);
+		return encodeReocrdIndex(nextUUID(), topic, Transaction.NON.ordinal(), 0);
 	}
 	
 	public static ByteBuffer createNonTransactionRecord(String topic, int index) throws Exception {
-        return encodeReocrdIndex(nextUUID(), topic, NON_TX, index);
+        return encodeReocrdIndex(nextUUID(), topic, Transaction.NON.ordinal(), index);
     }
 	
 	public static ByteBuffer createPrepareTransactionReocrd(byte[] txid, String topic) throws Exception {
-		return encodeReocrdIndex(txid, topic, PRE_TX, 0);
+		return encodeReocrdIndex(txid, topic, Transaction.PREPARE.ordinal(), 0);
 	}
 	
 	public static ByteBuffer createCommitTransactionReocrd(byte[] txid, String topic) throws Exception {
-		return encodeReocrdIndex(txid, topic, COMMIT_TX, 0);
+		return encodeReocrdIndex(txid, topic, Transaction.COMMIT.ordinal(), 0);
 	}
 	
-	public static ByteBuffer createReocrd(byte[] globalId, String topic, byte sign, byte[] body) throws Exception {
+	public static ByteBuffer createReocrd(byte[] globalId, String topic, int sign, byte[] body) throws Exception {
 	    MQProducer producer = new MQProducer(null, new MQClusterMetaData(null));
 	    MQProducer.MQRecordMetaData recordMetaData = new MQProducer.MQRecordMetaData();
 	    recordMetaData.body = body;
-	    recordMetaData.sign = sign;
+	    recordMetaData.sign = (byte) sign;
 	    recordMetaData.id = globalId;
 	    recordMetaData.topic = topic;
 	    recordMetaData.producer = "testProducer".getBytes();
@@ -98,7 +96,7 @@ public class ReocrdHelper {
 		return recordData;
 	}
 	
-	static ByteBuffer encodeReocrdIndex(byte[] txid, String topic, byte sign, int index) throws Exception {
+	static ByteBuffer encodeReocrdIndex(byte[] txid, String topic, int sign, int index) throws Exception {
         String body = "Hello world! Hello world! Hello world! Hello world! Hello world! "
                     + "Hello world! Hello world! Hello world! Hello world! "
                     + "-" + String.format("%010d", index);

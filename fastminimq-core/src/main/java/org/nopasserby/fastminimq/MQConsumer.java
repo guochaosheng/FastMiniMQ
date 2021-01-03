@@ -16,11 +16,9 @@
 
 package org.nopasserby.fastminimq;
 
-import static org.nopasserby.fastminimq.MQConstants.COMMIT_TX;
 import static org.nopasserby.fastminimq.MQConstants.GLOBAL_ID_LENGTH;
 import static org.nopasserby.fastminimq.MQConstants.IMMUTABLE;
 import static org.nopasserby.fastminimq.MQConstants.MAGIC;
-import static org.nopasserby.fastminimq.MQConstants.NON_TX;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.REOCRD_LENGTH_SELF_LENGTH;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.COMMAND_DATA_OFFSET;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.CONSUME;
@@ -42,6 +40,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.nopasserby.fastminimq.MQConstants.Transaction;
 import org.nopasserby.fastminimq.MQClient.MQSender;
 import org.nopasserby.fastminimq.MQConstants.Status;
 import org.nopasserby.fastminimq.MQExecutor.ChannelDelegate;
@@ -285,7 +284,7 @@ public class MQConsumer {
             byte magic = buffer.get();
             checkArgument(magic == MAGIC, "magic error");
             byte sign = buffer.get();
-            checkArgument(sign == NON_TX || sign == COMMIT_TX, "sign error");
+            checkArgument(sign != Transaction.ROLLBACK.ordinal(), "sign error");
             byte[] id = new byte[GLOBAL_ID_LENGTH];
             buffer.get(id);
             int topicLength = buffer.getShort();

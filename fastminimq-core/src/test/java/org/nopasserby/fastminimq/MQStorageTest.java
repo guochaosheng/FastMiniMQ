@@ -17,7 +17,6 @@
 package org.nopasserby.fastminimq;
 
 import static java.io.File.separator;
-import static org.nopasserby.fastminimq.MQConstants.NON_TX;
 import static org.nopasserby.fastminimq.MQConstants.LogType.commit;
 import static org.nopasserby.fastminimq.MQConstants.MQBroker.BYTES_RINGBUFFER_BLOCKUNIT;
 import static org.nopasserby.fastminimq.MQConstants.MQBroker.DATA_DIR;
@@ -40,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.nopasserby.fastminimq.MQConstants.Status;
+import org.nopasserby.fastminimq.MQConstants.Transaction;
 import org.nopasserby.fastminimq.MQExecutor.ChannelDelegate;
 import org.nopasserby.fastminimq.MQRegistry.MQClusterMetaData;
 import org.nopasserby.fastminimq.log.RandomBufferSegmentLogFactory;
@@ -125,7 +125,7 @@ public class MQStorageTest {
 		while (body.getBytes().length < 16 * 1024) {
 			body += seg;
 		}
-		ByteBuffer commandData = createReocrd(MQUtil.nextUUID(), topic, NON_TX, body.getBytes());
+		ByteBuffer commandData = createReocrd(MQUtil.nextUUID(), topic, Transaction.NON.ordinal(), body.getBytes());
 		
 		new Thread(storage).start();
 		

@@ -16,13 +16,9 @@
 
 package org.nopasserby.fastminimq;
 
-import static org.nopasserby.fastminimq.MQConstants.COMMIT_TX;
 import static org.nopasserby.fastminimq.MQConstants.GLOBAL_ID_LENGTH;
 import static org.nopasserby.fastminimq.MQConstants.MAGIC;
-import static org.nopasserby.fastminimq.MQConstants.NON_TX;
-import static org.nopasserby.fastminimq.MQConstants.PRE_TX;
 import static org.nopasserby.fastminimq.MQConstants.RETRY;
-import static org.nopasserby.fastminimq.MQConstants.ROLLBACK_TX;
 import static org.nopasserby.fastminimq.MQConstants.MQBroker.SERVER_DECODE_MAX_FRAME_LENGTH;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.COMMAND_DATA_OFFSET;
 import static org.nopasserby.fastminimq.MQConstants.MQCommand.PRODUCE;
@@ -45,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.nopasserby.fastminimq.MQConstants.Transaction;
 import org.nopasserby.fastminimq.MQClient.MQSender;
 import org.nopasserby.fastminimq.MQConstants.Status;
 import org.nopasserby.fastminimq.MQExecutor.ChannelDelegate;
@@ -175,18 +172,18 @@ public class MQProducer {
     }
     
     public MQFuture<MQRecord> sendTxMsg(String topic, byte[] body) {
-        return dispatch(clusterQueues, newFutureMetaData(createGlobalID(), PRE_TX, topic, body));
+        return dispatch(clusterQueues, newFutureMetaData(createGlobalID(), Transaction.PREPARE.ordinal(), topic, body));
     }
     
     public MQFuture<MQRecord> commit(MQRecord record) {
-        MQFutureMetaData future = newFutureMetaData(record.getId(), COMMIT_TX, record.getTopic(), record.getBody());
+        MQFutureMetaData future = newFutureMetaData(record.getId(), Transaction.COMMIT.ordinal(), record.getTopic(), record.getBody());
         MQClusterQueues clusterQueues = this.clusterQueues;
         future.recordMetaData.addHistoryBroker(clusterQueues.metaData(record.getBroker()));
         return dispatch(clusterQueues, future);
     }
     
     public MQFuture<MQRecord> rollback(MQRecord record) {
-        MQFutureMetaData future = newFutureMetaData(record.getId(), ROLLBACK_TX, record.getTopic(), record.getBody());
+        MQFutureMetaData future = newFutureMetaData(record.getId(), Transaction.ROLLBACK.ordinal(), record.getTopic(), record.getBody());
         MQClusterQueues clusterQueues = this.clusterQueues;
         future.recordMetaData.addHistoryBroker(clusterQueues.metaData(record.getBroker()));
         return dispatch(clusterQueues, future);
@@ -198,15 +195,15 @@ public class MQProducer {
     
     public MQFuture<MQRecord> sendMsg(byte[] id, String topic, byte[] body) { 
         checkArgument(id.length == GLOBAL_ID_LENGTH, "id length must be 16 bytes"); // 128 bit
-        return dispatch(clusterQueues, newFutureMetaData(id, NON_TX, topic, body));
+        return dispatch(clusterQueues, newFutureMetaData(id, Transaction.NON.ordinal(), topic, body));
     }
     
-    MQFutureMetaData newFutureMetaData(byte[] id, byte sign, String topic, byte[] body) {
+    MQFutureMetaData newFutureMetaData(byte[] id, int sign, String topic, byte[] body) {
         MQFutureMetaData future = new MQFutureMetaData();
         MQRecordMetaData recordMetaData = new MQRecordMetaData();
         recordMetaData.futureId = nextId();
         recordMetaData.id = id;
-        recordMetaData.sign = sign;
+        recordMetaData.sign = (byte) sign;
         recordMetaData.topic = topic;
         recordMetaData.body = body;
         recordMetaData.producer = name0();
@@ -241,7 +238,7 @@ public class MQProducer {
             return;
         }
         MQBrokerMetaData brokerMetaData = recordMetaData.historyLastBroker();// default route
-        if (recordMetaData.sign == NON_TX || (recordMetaData.retry == 0 && recordMetaData.sign == PRE_TX)) {
+        if (recordMetaData.sign == Transaction.NON.ordinal() || (recordMetaData.retry == 0 && recordMetaData.sign == Transaction.PREPARE.ordinal())) {
             brokerMetaData = route(routeDeques.brokerMetaDataList(), recordMetaData);// extend route
         }
         recordMetaData.addHistoryBroker(brokerMetaData);
@@ -331,7 +328,7 @@ public class MQProducer {
     }
     
     ByteBuffer encode(MQRecordMetaData messageMetaData) throws Exception {
-        if (messageMetaData.sign == PRE_TX || messageMetaData.sign == ROLLBACK_TX) {
+        if (messageMetaData.sign == Transaction.PREPARE.ordinal() || messageMetaData.sign == Transaction.ROLLBACK.ordinal()) {
             byte[] producer = messageMetaData.producer;
             
             // magic + sign + producer length + producer
