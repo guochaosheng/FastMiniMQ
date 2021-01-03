@@ -37,4 +37,5 @@
 | :------------------------ | :----------------------------------------------------------- |
 | reboot 前后数据一致性验证 | [已完](https://github.com/guochaosheng/FastMiniMQ/tree/master/docs/test/reliability/testcase_reboot.md) |
 | kill PID 安全退出前后数据一致性验证 | [已完](https://github.com/guochaosheng/FastMiniMQ/tree/master/docs/test/reliability/testcase_safe_exit.md) |
+| 事务消息（不丢失不重复）数据一致性验证 | [已完](https://github.com/guochaosheng/FastMiniMQ/tree/master/docs/test/reliability/testcase_transaction.md) |
 | 生产和消费数据一致性验证  | 待完                                                         |
