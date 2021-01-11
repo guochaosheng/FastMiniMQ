@@ -303,6 +303,8 @@ public class MQConsumer {
             
             MQRecord record = new MQRecord();
             record.setId(id);
+            record.setSign(sign);
+            record.setBroker(consumerCfg.brokerName);
             record.setTopic(new String(topic));
             record.setBody(body);
             record.setTimestamp(recordTimestamp);

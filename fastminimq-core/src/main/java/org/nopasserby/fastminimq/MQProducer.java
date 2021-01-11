@@ -172,18 +172,30 @@ public class MQProducer {
     }
     
     public MQFuture<MQRecord> sendTxMsg(String topic, byte[] body) {
-        return dispatch(clusterQueues, newFutureMetaData(createGlobalID(), Transaction.PREPARE.ordinal(), topic, body));
+        return sendTxMsg(topic, body, Transaction.PREPARE);
+    }
+    
+    public MQFuture<MQRecord> sendTxMsg(String topic, byte[] body, Transaction transaction) {
+        return dispatch(clusterQueues, newFutureMetaData(createGlobalID(), transaction.ordinal(), topic, body));
     }
     
     public MQFuture<MQRecord> commit(MQRecord record) {
-        MQFutureMetaData future = newFutureMetaData(record.getId(), Transaction.COMMIT.ordinal(), record.getTopic(), record.getBody());
+        return commit(record, Transaction.COMMIT);
+    }
+    
+    public MQFuture<MQRecord> commit(MQRecord record, Transaction transaction) {
+        MQFutureMetaData future = newFutureMetaData(record.getId(), transaction.ordinal(), record.getTopic(), record.getBody());
         MQClusterQueues clusterQueues = this.clusterQueues;
         future.recordMetaData.addHistoryBroker(clusterQueues.metaData(record.getBroker()));
         return dispatch(clusterQueues, future);
     }
     
     public MQFuture<MQRecord> rollback(MQRecord record) {
-        MQFutureMetaData future = newFutureMetaData(record.getId(), Transaction.ROLLBACK.ordinal(), record.getTopic(), record.getBody());
+        return rollback(record, Transaction.ROLLBACK);
+    }
+    
+    public MQFuture<MQRecord> rollback(MQRecord record, Transaction transaction) {
+        MQFutureMetaData future = newFutureMetaData(record.getId(), transaction.ordinal(), record.getTopic(), record.getBody());
         MQClusterQueues clusterQueues = this.clusterQueues;
         future.recordMetaData.addHistoryBroker(clusterQueues.metaData(record.getBroker()));
         return dispatch(clusterQueues, future);
@@ -238,7 +250,9 @@ public class MQProducer {
             return;
         }
         MQBrokerMetaData brokerMetaData = recordMetaData.historyLastBroker();// default route
-        if (recordMetaData.sign == Transaction.NON.ordinal() || (recordMetaData.retry == 0 && recordMetaData.sign == Transaction.PREPARE.ordinal())) {
+        if (recordMetaData.sign == Transaction.NON.ordinal() 
+                || (recordMetaData.retry == 0 && recordMetaData.sign == Transaction.PREPARE.ordinal())
+                || (recordMetaData.retry == 0 && recordMetaData.sign == Transaction.PREPARE_FOR_CONSUMER.ordinal())) {
             brokerMetaData = route(routeDeques.brokerMetaDataList(), recordMetaData);// extend route
         }
         recordMetaData.addHistoryBroker(brokerMetaData);

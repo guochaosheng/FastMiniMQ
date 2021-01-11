@@ -49,7 +49,7 @@ public class MQConsumerTest {
             long timestamp = System.currentTimeMillis();
             List<MQRecord> recordList = result.getResult();
             for (MQRecord record: recordList) {
-                System.out.printf("%s,%s,%d %n", sdf.format(new Date()), new String(record.getBody()), timestamp - record.getTimestamp());
+            	System.out.printf("%s,%s,%s,%d %n", sdf.format(new Date()), record.getSign(), new String(record.getBody()), timestamp - record.getTimestamp());
                 batchCount--;
             }
             queue.ack();
