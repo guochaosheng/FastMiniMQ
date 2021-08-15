@@ -24,6 +24,7 @@ import static org.nopasserby.fastminimq.MQConstants.MQCommand.REOCRD_HEAD_LENGTH
 import static org.nopasserby.fastminimq.MQUtil.nextUUID;
 
 import org.nopasserby.fastminimq.MQConstants.Transaction;
+import org.nopasserby.fastminimq.MQConsumer.MQConsumerCfg;
 import org.nopasserby.fastminimq.MQRegistry.MQClusterMetaData;
 
 import java.nio.ByteBuffer;
@@ -104,7 +105,8 @@ public class ReocrdHelper {
     }
 	
 	public static int decodeReocrdIndex(ByteBuffer recordData) throws Exception {
-	    MQConsumer consumer = new MQConsumer(null, new MQClusterMetaData(null));
+		MQConsumerCfg consumerCfg = new MQConsumerCfg("testConsumer", "testCluster", "testBroker");
+	    MQConsumer consumer = new MQConsumer(consumerCfg, new MQClusterMetaData(null));
 	    String body = new String(consumer.decodeRecordList(recordData).get(0).getBody());
 		return Integer.parseInt(body.substring(body.length() - 10));
 	}

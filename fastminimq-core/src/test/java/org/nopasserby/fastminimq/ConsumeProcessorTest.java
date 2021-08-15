@@ -27,6 +27,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
+import org.nopasserby.fastminimq.MQConsumer.MQConsumerCfg;
 import org.nopasserby.fastminimq.MQExecutor.ChannelDelegate;
 import org.nopasserby.fastminimq.MQRegistry.MQClusterMetaData;
 import org.nopasserby.fastminimq.MQResult.MQRecord;
@@ -57,7 +58,8 @@ public class ConsumeProcessorTest {
         ConsumeProcessor consumeProcessor = new ConsumeProcessor(consumeQueue);
         ByteBuffer buffer = ByteBuffer.allocate(CLIENT_DECODE_MAX_FRAME_LENGTH);
         long nextIndex = 0;
-        MQConsumer consumer = new MQConsumer(null, new MQClusterMetaData(null));
+        MQConsumerCfg consumerCfg = new MQConsumerCfg("testConsumer", "testCluster", "testBroker");
+        MQConsumer consumer = new MQConsumer(consumerCfg, new MQClusterMetaData(null));
         int index = 0;
         while (index < batch) {
             nextIndex = consumeProcessor.next(topic, nextIndex, 200, 0, 0, buffer);
@@ -103,7 +105,8 @@ public class ConsumeProcessorTest {
         commandData.putLong(0);                                // put delay (unit milliseconds)
         commandData.flip();
         
-        MQConsumer consumer = new MQConsumer(null, new MQClusterMetaData(null));
+        MQConsumerCfg consumerCfg = new MQConsumerCfg("testConsumer", "testCluster", "testBroker");
+        MQConsumer consumer = new MQConsumer(consumerCfg, new MQClusterMetaData(null));
         
         consumeProcessor.dispatch(new ChannelDelegate(null) {
             @Override
