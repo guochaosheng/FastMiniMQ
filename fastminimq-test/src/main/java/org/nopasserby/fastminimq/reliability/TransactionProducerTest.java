@@ -32,8 +32,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.nopasserby.fastminimq.MQConstants.Transaction;
 import org.nopasserby.fastminimq.MQProducer;
+import org.nopasserby.fastminimq.MQConstants;
 import org.nopasserby.fastminimq.MQConstants.Status;
 import org.nopasserby.fastminimq.MQProducer.MQProducerCfg;
 import org.nopasserby.fastminimq.MQRegistry.MQBrokerMetaData;
@@ -167,7 +167,7 @@ public class TransactionProducerTest {
             
             if (record.getStatus() == Status.OK) {
                 db.beginTransaction();
-                boolean committed = record.getSign() == Transaction.COMMIT.ordinal() && record.getStatus() == Status.OK;
+                boolean committed = record.getSign() == MQConstants.Transaction.COMMIT.ordinal() && record.getStatus() == Status.OK;
                 if (committed) db.incrementRecordCnt(partition[threadOrder.get() % partition.length], 1);
                 db.delete(record);
                 db.commit();
