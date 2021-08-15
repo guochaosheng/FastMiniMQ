@@ -4,7 +4,7 @@
 
 ## 结构图
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/testcase_reboot.svg)
+![](testcase_reboot.assets/testcase_reboot.svg)
 ## 测试方案
 * 测试项 1：Producer 发送 1000 w 笔消息记录，记录此时 Producer 已得到成功应答消息总数后 Broker 关机，之后启动 Broker 和 Consumer，检查可消费消息记录总数是否同 Producer 已得到成功应答消息总数相等，是则正确，否则错误。
 

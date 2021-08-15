@@ -4,7 +4,7 @@
 
 ## 结构图
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/fastminimq_transaction_chaos_topology.svg?datetime=202001031113)
+![](testcase_transaction.assets/testcase_transaction.svg)
 
 **节点清单** 
 

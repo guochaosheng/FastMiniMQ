@@ -32,7 +32,7 @@
 
 
 
-<div align=center><img width="85%" src="fastminimq_design_transaction.assets/MQ 事务消息验证模型.svg"/></div>
+<div align=center><img width="85%" src="fastminimq_design_transaction.assets/mq_transaction_message_validation_model.svg"/></div>
 
 ​		DB 作为操作记录者，每当生产者提交消息返回成功时就插入一条消息 ID 记录，每当消费者取得消息时也插入一条消息 ID 记录，MQ 事务机制保证生产者和消费者两端的 DB 所记录生产和消费消息必定在某个时间达成一致（最终一致）。当生产者停止生产，消费者消费结束，DB 所记录生产和消费全量消息也必定相同。
 
@@ -87,22 +87,21 @@
 
 * 消息代理端去重模式
 
-<div align=center><img width="100%" src="fastminimq_design_transaction.assets/FastMiniMQ 事务机制-消息代理端去重模式.svg"/></div>
+<div align=center><img width="100%" src="fastminimq_design_transaction.assets/fastminimq_message_broker_deduplication_mode.svg"/></div>
 
 ​		上述流程中，生产者操作步骤为 P1 至 P7，消费者操作步骤为 S1 至 S3，注意消费者更新消费队列操作必须和消息消费操作在同一个事务中，二者必须同时成功或者失败，否则可能导致消息重复消费。
 
  * 消费端去重模式
 
+<div align=center><img width="100%" src="fastminimq_design_transaction.assets/fastminimq_message_consumer_deduplication_mode.svg"/></div>
 
-<div align=center><img width="100%" src="fastminimq_design_transaction.assets/FastMiniMQ 事务机制-消费端去重模式.svg"/></div>
-
-​		上述流程中，生产者操作步骤为 P1 至 P7，消费者操作步骤为 S1 至 S7。注意消费者删除预备消息操作必须和消息消费操作在同一个事务中，二者必须同时成功或者失败，否则可能导致消息重复消费。
+​		上述流程中，生产者操作步骤为 P1 至 P7，消费者操作步骤为 S1 至 S8。注意消费者删除预备消息操作必须和消息消费操作在同一个事务中，二者必须同时成功或者失败，否则可能导致消息重复消费。
 
 ​		上面的两种事务消息模式中，生产者 P1 操作步骤可以合并到 P4 操作步骤，等发送预备消息操作返回后再将消息和消息状态存储到本地库，这样可以减少 1 次本地事务，但是在使用消息代理端去重而不是消费端去重模式时可能会导致消息中间件存在非常少量废弃的预备消息，因为生产者如果宕机而没把发送的消息和消息状态存储到本地库，没有消息记录重启后消息也无从提交或回滚，这些废弃预备消息会等到日志过期（默认保留 7 天）后才一起删除。
 
 ​       上面的两种事务消息模式都是基于消费操作无幂等性的前提，如果消费操作具有幂等性，那么只需要保证 QoS 1 服务质量等级，由此只需要在普通消息投递流程上增加消息补偿机制确保消息至少送达一次，其流程如下
 
-<div align=center><img width="80%" src="fastminimq_design_transaction.assets/FastMiniMQ 消息补偿机制.svg"/></div>
+<div align=center><img width="80%" src="fastminimq_design_transaction.assets/fastminimq_message_compensation_mechanism.svg"/></div>
 
 ​		上述流程中，生产者操作步骤为 P1 至 P4，消费者操作步骤为 S1 至 S2。需特别注意的是，生产端消息尝试发送次数需配置为 1（默认是 3）。原因在于默认情况下，生产者向消息中间件集群发送普通消息时会选择其中一个尝试发送，如果消息发送失败就会自动进行故障转移，从集群选择另其中一个重新发送，由于多次尝试向不同消息中间件发送同一个消息可能导致不同消息中间件持有同一个消息，如果每个消息中间件各自连接不同的消费者，此时同一个消息就可能被不同消费者消费。
 
@@ -120,7 +119,7 @@
 
 
 
-<div align=center><img width="75%" src="fastminimq_design_transaction.assets/FastMiniMQ 事务机制验证流程-节点部署拓扑结构图.svg"/></div>
+<div align=center><img width="75%" src="fastminimq_design_transaction.assets/fastminimq_transaction_validation_node_deployment_topology_diagram.svg"/></div>
 
 ​		上述拓扑结构图中，Producer-1、Producer-2、Producer-3、Producer-4 是生产者节点，Consumer-1、Consumer-2、Consumer-3、Consumer-4 是消费者节点，Broker-1、Broker-2 是消息中间件节点。
 

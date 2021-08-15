@@ -3,7 +3,7 @@
 
 ## 部署结构图
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/fastminimq_pref_deploy.svg)
+![](testcase_async_topic_256_body_64_8c16gx1.assets/fastminimq_pref_deploy.svg)
 
 ## 执行命令清单和操作流程
 
@@ -38,42 +38,42 @@
 
 1. 磁盘IO读写 [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/monitor_disk_read_write_bytes(Bps).png)
+![](testcase_async_topic_256_body_64_8c16gx1.assets/monitor_disk_read_write_bytes(Bps).png)
 
 2. 网络IO进出 [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/monitor_net_in_out_rate(bps).png)
+![](testcase_async_topic_256_body_64_8c16gx1.assets/monitor_net_in_out_rate(bps).png)
 
 3. CPU消耗 [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/monitor_cpu_used_rate.png)
+![](testcase_async_topic_256_body_64_8c16gx1.assets/monitor_cpu_used_rate.png)
 
 4. 内存占用 [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/monitor_mem_used_total.png)
+![](testcase_async_topic_256_body_64_8c16gx1.assets/monitor_mem_used_total.png)
 
 5. 磁盘 IOPS [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/monitor_disk_read_write_requests.png)
+![](testcase_async_topic_256_body_64_8c16gx1.assets/monitor_disk_read_write_requests.png)
 
 6. GC Duration Time [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/gc_duration_time.png)
+![](testcase_async_topic_256_body_64_8c16gx1.assets/gc_duration_time.png)
 
 7. GC Causes [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/gc_causes.png)
+![](testcase_async_topic_256_body_64_8c16gx1.assets/gc_causes.png)
 
 8. GC Statistics [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/gc_statistics.png)
+![](testcase_async_topic_256_body_64_8c16gx1.assets/gc_statistics.png)
 
 9. Producer Statistics TPS [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/monitor_producer_statistics_tps.png)
+![](testcase_async_topic_256_body_64_8c16gx1.assets/monitor_producer_statistics_tps.png)
 
 10. Consumer Statistics TPS [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/monitor_consumer_statistics_tps.png)
+![](testcase_async_topic_256_body_64_8c16gx1.assets/monitor_consumer_statistics_tps.png)
 
 更多测试报告看：[fastminimq-testcase-list](https://github.com/guochaosheng/FastMiniMQ/tree/master/docs/test/testcase_list.md)
