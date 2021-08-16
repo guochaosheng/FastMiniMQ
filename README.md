@@ -1,6 +1,6 @@
 # FastMiniMQ
 
-[![Build Status img](https://travis-ci.org/guochaosheng/FastMiniMQ.svg?branch=master)](https://travis-ci.org/github/guochaosheng/FastMiniMQ)  [![Coverage Status](https://coveralls.io/repos/github/guochaosheng/FastMiniMQ/badge.svg?branch=master)](https://coveralls.io/github/guochaosheng/FastMiniMQ?branch=master)  [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
+[![Github Build Status](https://github.com/guochaosheng/FastMiniMQ/workflows/CI/badge.svg?branch=master)](https://github.com/guochaosheng/FastMiniMQ/actions)  [![Coverage Status](https://coveralls.io/repos/github/guochaosheng/FastMiniMQ/badge.svg?branch=master)](https://coveralls.io/github/guochaosheng/FastMiniMQ?branch=master)  [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 轻量，高效。FastMiniMQ 是一个消息队列。非常轻，源代码大约200Kb，运行程序包大约 5M。非常快，8核16G内存单机消息生产和消费均可稳定维持 TPS 100w/s 左右。[看看我们是怎么做的](https://github.com/guochaosheng/FastMiniMQ/tree/master/docs/design/fastminimq_design_analysis.md)。
 ## API Example 
