@@ -23,6 +23,7 @@
 | 6    | java -Ddata.dir=/data/fastminimq -Dflush.sync=true -XX:+UseG1GC -cp FastMiniMQBroker.jar org.nopasserby.fastminimq.FastMiniMQBroker<br>java -Dip=172.31.0.128 -cp ./FastMiniMQBroker.jar:./FastMiniMQ-0.13.1-SNAPSHOT-tests.jar org.nopasserby.fastminimq.benchmark.ConsumerThroughputTest | 启动运行 broker 和 consumer，检查可消费消息记录总数是否同 Producer 已得到成功应答消息总数相等 |
 
 * 测试项 2
+
 | 序号 | 执行命令或者操作                                             | 说明                                                         |
 | :--- | :----------------------------------------------------------- | :----------------------------------------------------------- |
 | 1    | mvn clean install                                            | 编译打包生成 FastMiniMQBroker.jar 和 FastMiniMQ-0.13.1-SNAPSHOT-tests.jar |
