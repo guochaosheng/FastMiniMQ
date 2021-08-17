@@ -2,7 +2,7 @@
 
 [![Github Build Status](https://github.com/guochaosheng/FastMiniMQ/workflows/CI/badge.svg?branch=master)](https://github.com/guochaosheng/FastMiniMQ/actions)  [![Coverage Status](https://coveralls.io/repos/github/guochaosheng/FastMiniMQ/badge.svg?branch=master)](https://coveralls.io/github/guochaosheng/FastMiniMQ?branch=master)  [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
-轻量，高效。FastMiniMQ 是一个消息队列。非常轻，源代码大约200Kb，运行程序包大约 5M。非常快，8核16G内存单机消息生产和消费均可稳定维持 TPS 100w/s 左右。[看看我们是怎么做的](https://github.com/guochaosheng/FastMiniMQ/tree/master/docs/design/fastminimq_design_analysis.md)。
+轻量，高效。FastMiniMQ 是一个消息队列。非常轻，源代码大小 200 ~ 300 KB，运行程序包大小约 5 M。非常快，8 核 16 G（磁盘最大吞吐量 140 MB/s，最大 IOPS 5000）单机消息生产和消费均可稳定维持 100 万 TPS（[看看我们是怎么做的](https://github.com/guochaosheng/FastMiniMQ/tree/master/docs/design/fastminimq_design_analysis.md)）。
 ## API Example 
 * MQProducer Send Message Example
 ```
@@ -70,7 +70,7 @@ consumer.shutdown();
 
 * 结构图
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/fastminimq_pref_deploy.svg)
+![](https://raw.githubusercontent.com/guochaosheng/FastMiniMQ/master/docs/test/benchmark/testcase_async_topic_256_body_64_8c16gx1.assets/fastminimq_pref_deploy.svg)
 
 * 构建
 
@@ -117,45 +117,45 @@ Maven 版本：Apache Maven 3.2.5
 
 FastMiniMQ 基准测试报告：
 
-磁盘IO读写 [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
+磁盘 IO 读写 [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/monitor_disk_read_write_bytes(Bps).png)
+![](https://raw.githubusercontent.com/guochaosheng/FastMiniMQ/master/docs/test/benchmark/testcase_async_topic_256_body_64_8c16gx1.assets/monitor_disk_read_write_bytes(Bps).png)
 
-网络IO进出 [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
+网络 IO 进出 [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/monitor_net_in_out_rate(bps).png)
+![](https://raw.githubusercontent.com/guochaosheng/FastMiniMQ/master/docs/test/benchmark/testcase_async_topic_256_body_64_8c16gx1.assets/monitor_net_in_out_rate(bps).png)
 
-CPU消耗 [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
+CPU 消耗 [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/monitor_cpu_used_rate.png)
+![](https://raw.githubusercontent.com/guochaosheng/FastMiniMQ/master/docs/test/benchmark/testcase_async_topic_256_body_64_8c16gx1.assets/monitor_cpu_used_rate.png)
 
 内存占用 [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/monitor_mem_used_total.png)
+![](https://raw.githubusercontent.com/guochaosheng/FastMiniMQ/master/docs/test/benchmark/testcase_async_topic_256_body_64_8c16gx1.assets/monitor_mem_used_total.png)
 
 磁盘 IOPS [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/monitor_disk_read_write_requests.png)
+![](https://raw.githubusercontent.com/guochaosheng/FastMiniMQ/master/docs/test/benchmark/testcase_async_topic_256_body_64_8c16gx1.assets/monitor_disk_read_write_requests.png)
 
 GC Duration Time [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/gc_duration_time.png)
+![](https://raw.githubusercontent.com/guochaosheng/FastMiniMQ/master/docs/test/benchmark/testcase_async_topic_256_body_64_8c16gx1.assets/gc_duration_time.png)
 
 GC Causes [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/gc_causes.png)
+![](https://raw.githubusercontent.com/guochaosheng/FastMiniMQ/master/docs/test/benchmark/testcase_async_topic_256_body_64_8c16gx1.assets/gc_causes.png)
 
 GC Statistics [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/gc_statistics.png)
+![](https://raw.githubusercontent.com/guochaosheng/FastMiniMQ/master/docs/test/benchmark/testcase_async_topic_256_body_64_8c16gx1.assets/gc_statistics.png)
 
 Producer Statistics TPS [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/monitor_producer_statistics_tps.png)
+![](https://raw.githubusercontent.com/guochaosheng/FastMiniMQ/master/docs/test/benchmark/testcase_async_topic_256_body_64_8c16gx1.assets/monitor_producer_statistics_tps.png)
 
 Consumer Statistics TPS [时段 2020-08-02 12:45:00 - 2020-08-02 15:50:00]
 
-![](https://www.guochaosheng.com/fastminimq/docs/img/monitor_consumer_statistics_tps.png)
+![](https://raw.githubusercontent.com/guochaosheng/FastMiniMQ/master/docs/test/benchmark/testcase_async_topic_256_body_64_8c16gx1.assets/monitor_consumer_statistics_tps.png)
 
 更多测试报告看：[fastminimq-testcase-list](https://github.com/guochaosheng/FastMiniMQ/tree/master/docs/test/testcase_list.md)
 
